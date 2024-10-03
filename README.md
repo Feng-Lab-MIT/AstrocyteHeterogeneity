@@ -8,3 +8,5 @@ This respository is organized topically based on our manuscript. There is a diff
 System requirements to run these scripts with data of our size:
 * \>128G RAM (most code was run on a Linux machine with 256G RAM)
 * at least 1 GPU
+
+Before running these scripts, please create a fresh conda environment and install the packages in "general_scanpy_scvi_environment.yml" via pip. This environment will work for most analyses, except those in folders where a sepeparate environmnet .yml file is listed (e.g. SATURN, LIANA, pertpy, etc.).
