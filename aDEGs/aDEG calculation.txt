@@ -1,0 +1,2 @@
+aDEG calculation happened in the same script as region-decontamination. 
+See the folder "pre-proccessing_clustering_region-decontamination" with scripts for each species and cell type of interest.
