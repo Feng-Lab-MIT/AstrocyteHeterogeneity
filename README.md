@@ -1,7 +1,7 @@
 # AstrocyteHeterogeneity
 Contains snRNAseq preprocessing and analysis scripts, CellProfiler pipelines, and Fiji and MATLAB scripts for analysis of ExR and multiExR images.
 
-Accompanies the manuscript by Schroeder et al., 2024 [bioRxiv link forthcoming].
+Accompanies the manuscript by Schroeder et al., 2024 ["Astrocyte regional specialization is shaped by postnatal development"](https://www.biorxiv.org/content/10.1101/2024.10.11.617802v1).
 
 This respository is organized topically based on our manuscript. There is a different subfolder for each type of analysis. Environment .yaml files with necessary package requirements are provided in each subfolder.
 
