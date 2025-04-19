@@ -2,8 +2,13 @@
 %Last modified by MES in August 2024
 
 %change directories here!
-parentdir = 'A:/Margaret/Astrocytes/Exp177_Aldh1l1-Cre_CAG-FLEX-GFP_4x-exp_astro_morph/striatum/segmentations_1std/';
-savedir = 'A:/Margaret/Astrocytes/Exp177_Aldh1l1-Cre_CAG-FLEX-GFP_4x-exp_astro_morph/striatum/boxcount_out/';
+% parentdir = 'A:/Margaret/Astrocytes/Exp189_4xexp_astromorph_202502/segmentations_1std/';
+% savedir = 'A:/Margaret/Astrocytes/Exp189_4xexp_astromorph_202502/boxcount_out/';
+
+clear all
+
+parentdir = 'A:/Margaret/Astrocytes/Exp189_4xexp_astromorph_202502/in DIW 2025.3.18/segmentations_1std/';
+savedir = 'A:/Margaret/Astrocytes/Exp189_4xexp_astromorph_202502/in DIW 2025.3.18/boxcount_out/';
 
 files = dir([parentdir '*tif*']);
 n = zeros((length(files)),12);
