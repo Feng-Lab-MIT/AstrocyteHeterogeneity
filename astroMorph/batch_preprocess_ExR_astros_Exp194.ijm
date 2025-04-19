@@ -13,11 +13,11 @@ parentout = "/run/user/1000/gvfs/smb-share:server=exr.mit.edu,share=exr/Margaret
 regList = newArray("PFC/",
 					"STR/",
 					"THAL/"
-					); //round folders - again, will need to be modified depending on how you saved your data
+					); 
 
 chanList = newArray(
-	//"GFP+Gat3_546+Ca++_633/",
-	//"GFP+GLAST_546+Ca++_633/",
+	"GFP+Gat3_546+Ca++_633/",
+	"GFP+GLAST_546+Ca++_633/",
 	"GFP+mGluR3_546+Ca++_633/"
 	);
 	
