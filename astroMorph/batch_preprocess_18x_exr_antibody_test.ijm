@@ -7,13 +7,13 @@
 
 run("Close All");
 
-parent = "/run/user/1000/gvfs/smb-share:server=exr.mit.edu,share=exr/Jinyoung/2025.3.5 Astrocyte/"; //parent folder where raw microscope images are stored (e.g. in .nd2 format)
-parentout = "/run/user/1000/gvfs/smb-share:server=exr.mit.edu,share=exr/Margaret/Astrocytes/Exp194_ExR_astro_rdegs/"; //where to save the images
+parent = "//ExR/ExR/Jinyoung/2025.3.28 Astrocyte single ExR/"; //parent folder where raw microscope images are stored (e.g. in .nd2 format)
+parentout = "//ExR/ExR/Margaret/Astrocytes/Exp195_ExR_astro_rdegs/"; //where to save the images
 
 regList = newArray("PFC/",
 					"STR/",
 					"THAL/"
-					); 
+					); //round folders - again, will need to be modified depending on how you saved your data
 
 chanList = newArray(
 	"GFP+Gat3_546+Ca++_633/",
