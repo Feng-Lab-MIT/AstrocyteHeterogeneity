@@ -579,3 +579,304 @@ def all_gene_DE(adata,metacell_axis,metacells,min_cells,min_expression,n_random_
 			long_DEG_df = pd.concat([long_DEG_df,long_DEG_df_rep],axis=0)
 
 	return long_DEG_df
+	
+#DM 2/4/25
+	
+def find_DEGs_merge_reps_fraction_pw(adata,metacell_axis,metacells,DEG_thresh,min_cells,min_expression,n_random_downsample, 
+                         replicate_key, min_fraction, balanced_reps):
+    reps = unique(list(adata.obs[replicate_key]))
+
+    if balanced_reps == True: 
+        #loop through each replicate
+        for rep in enumerate(reps):
+        
+            if n_random_downsample > 0:
+                rep_barcodes = list(adata[adata.obs[replicate_key]==rep].obs_names)
+                random_barcodes = sample(rep_barcodes,n_random_downsample)
+                adata_temp = adata[random_barcodes,:].copy()
+            else:
+                adata_temp = adata[adata.obs[replicate_key]==rep].copy()
+        
+            metacell_temp,log_metacell_temp=create_metacell(adata=adata_temp,
+                                          metacell_axis=metacell_axis,
+                                          metacells=metacells,
+                                          min_cells=min_cells,
+                                          min_expression=min_expression)
+        
+            mcells = []
+            for i in unique(adata_temp.obs[metacell_axis]):
+                if len(adata_temp[adata_temp.obs[metacell_axis] == i].obs.index)>50:
+                    mcells.append(i)
+        
+            #initialize lists
+            DEGs_all_rep = []
+            higher_all_rep = []
+            lower_all_rep = []
+            lfc_all_rep = []
+            ngenes=[]
+            comps=[]
+            nDEGs=[]
+            replist=[]
+            high_fraction_list = []
+            low_fraction_list = []
+            
+            replist_long=[]
+            complist_long=[]
+        
+            combos = combinations(mcells,2)
+            #for some reason this function gives a weird data structure so convert it to something useful
+            region_combos = []
+            for c in combos: region_combos.append(c)
+            combo_num = list(range(0, len(region_combos)))
+        
+            #first make a dictionary of genes that meet the min inclusion threshold so we don't ask this over and over
+            inclusion_dict = {}
+            for group in mcells:
+                adata_group = adata_temp[adata_temp.obs[metacell_axis]== group].copy()
+                min_inclusion = len(adata_group.obs.index)*min_fraction
+                sc.pp.filter_genes(adata_group, min_cells = min_inclusion)
+                group_inclusion_genes = list(adata_group.var.index) 
+                inclusion_dict[group] = group_inclusion_genes
+        
+            #loop through each pairwise metacell comparison
+            for c in combo_num:
+        
+                mcell1 = region_combos[c][0]
+                mcell2 = region_combos[c][1]
+        
+                print('Ranking pairing ' + str(c + 1) + ' of '+ str(len(combo_num))
+                +', ' + str(mcell1) + ' and ' + str(mcell2))
+        
+                comp_name = mcell1 + '-' + mcell2
+                #print(comp_name)
+        
+                FC = calc_logFC(log_metacell_temp,mcell1,mcell2)
+        
+                #take only DEGs over the threshold
+                FC = FC[np.abs(FC['change'])>=DEG_thresh]
+        
+                #only take genes above the min fraction included
+                group_inclusion_genes = inclusion_dict[mcell1]
+                rest_inclusion_genes = inclusion_dict[mcell2]
+                inclusion_genes = group_inclusion_genes + rest_inclusion_genes
+                inclusion_genes = unique(inclusion_genes)
+        
+                FC = FC[FC['gene'].isin(inclusion_genes)]
+                DEG_names_rep = list(FC['gene'])
+                DEGs_all_rep.extend(DEG_names_rep)
+        
+                #record which region is higher
+                higher_rep = FC['higher_group']
+                higher_names_rep = list(higher_rep)
+                higher_all_rep.extend(higher_names_rep)
+        
+                #record which region is lower
+                lower_rep = FC['lower_group']
+                lower_names_rep = list(lower_rep)
+                lower_all_rep.extend(lower_names_rep)
+                
+                #record LFC
+                this_lfc = FC['change'].abs()
+                this_lfc.astype('float')
+                #absolute value since we specify higher and lower group
+                lfc_rep = list(this_lfc)
+                lfc_all_rep.extend(lfc_rep)
+        
+                #longform replicate name list, for matching up with DEGs
+                replist_long.extend([rep]*len(DEG_names_rep))
+        
+                #longform comparison name list, for matcching up with DEGs
+                complist_long.extend([comp_name]*len(DEG_names_rep))
+        
+                #how many DEGs?
+                nDEGs.append(len(DEG_names_rep))
+        
+                #how many genes were over minimum expression threshold?
+                ngenes.append(len(list(FC.index))) 
+        
+                #collect the comparison name
+                comps.append(comp_name)
+        
+                #collect the replicate name
+                replist.append(rep)
+        
+                #zip up the outputs and create a dataframe
+                rep_condensed_output = list(zip(replist,comps,ngenes,nDEGs))
+                rep_long_output = list(zip(replist_long,complist_long,higher_all_rep,lower_all_rep,DEGs_all_rep,lfc_all_rep))
+
+        
+                #convert to dataframe format
+                condensed_DEG_df_rep = pd.DataFrame(rep_condensed_output,
+                                            columns=['replicate','comparison','ngenes','nDEGs'])
+                long_DEG_df_rep = pd.DataFrame(rep_long_output,
+                                            columns=['replicate','comparison','higher_group','lower_group','DEG_name', 'logFC'])  
+                
+        
+            if idx == 0: #if in first replicate
+                condensed_DEG_df = condensed_DEG_df_rep
+                long_DEG_df = long_DEG_df_rep
+            else:
+                condensed_DEG_df = pd.concat([condensed_DEG_df,condensed_DEG_df_rep],axis=0)
+                long_DEG_df = pd.concat([long_DEG_df,long_DEG_df_rep],axis=0)
+
+        
+        return condensed_DEG_df,long_DEG_df
+
+    elif balanced_reps == False: 
+        if n_random_downsample > 0:
+                rep_barcodes = list(adata.obs_names)
+                random_barcodes = sample(rep_barcodes,n_random_downsample)
+                adata_temp = adata[random_barcodes,:].copy()
+        else:
+                adata_temp = adata.copy()
+        
+        metacell_temp,log_metacell_temp=create_metacell(adata=adata_temp,
+                                      metacell_axis=metacell_axis,
+                                      metacells=metacells,
+                                      min_cells=min_cells,
+                                      min_expression=min_expression)
+    
+        mcells = []
+        for i in unique(adata_temp.obs[metacell_axis]):
+            if len(adata_temp[adata_temp.obs[metacell_axis] == i].obs.index)>50:
+                mcells.append(i)
+    
+        #initialize lists
+        DEGs_all_rep = []
+        higher_all_rep = []
+        lower_all_rep = []
+        lfc_all_rep = []
+        ngenes=[]
+        comps=[]
+        nDEGs=[]
+        replist=[]
+        high_fraction_list = []
+        low_fraction_list = []
+    
+        replist_long=[]
+        complist_long=[]
+    
+        combos = combinations(mcells,2)
+        #for some reason this function gives a weird data structure so convert it to something useful
+        region_combos = []
+        for c in combos: region_combos.append(c)
+        combo_num = list(range(0, len(region_combos)))
+    
+        #first make a dictionary of genes that meet the min inclusion threshold so we don't ask this over and over
+        inclusion_dict = {}
+        for group in mcells:
+            adata_group = adata_temp[adata_temp.obs[metacell_axis]== group].copy()
+            min_inclusion = len(adata_group.obs.index)*min_fraction
+            sc.pp.filter_genes(adata_group, min_cells = min_inclusion)
+            group_inclusion_genes = list(adata_group.var.index) 
+            inclusion_dict[group] = group_inclusion_genes
+    
+        #loop through each pairwise metacell comparison
+        for c in combo_num:
+    
+            mcell1 = region_combos[c][0]
+            mcell2 = region_combos[c][1]
+    
+            print('Ranking pairing ' + str(c + 1) + ' of '+ str(len(combo_num))
+            +', ' + str(mcell1) + ' and ' + str(mcell2))
+    
+            comp_name = mcell1 + '-' + mcell2
+            #print(comp_name)
+    
+            FC = calc_logFC(log_metacell_temp,mcell1,mcell2)
+    
+            #take only DEGs over the threshold
+            FC = FC[np.abs(FC['change'])>=DEG_thresh]
+    
+            #only take genes above the min fraction included
+            group_inclusion_genes = inclusion_dict[mcell1]
+            rest_inclusion_genes = inclusion_dict[mcell2]
+            inclusion_genes = group_inclusion_genes + rest_inclusion_genes
+            inclusion_genes = unique(inclusion_genes)
+    
+            FC = FC[FC['gene'].isin(inclusion_genes)]
+            DEG_names_rep = list(FC['gene'])
+            DEGs_all_rep.extend(DEG_names_rep)
+    
+            #record which region is higher
+            higher_rep = FC['higher_group']
+            higher_names_rep = list(higher_rep)
+            higher_all_rep.extend(higher_names_rep)
+    
+            #record which region is lower
+            lower_rep = FC['lower_group']
+            lower_names_rep = list(lower_rep)
+            lower_all_rep.extend(lower_names_rep)
+            
+            #record LFC
+            this_lfc = FC['change'].abs()
+            this_lfc.astype('float')
+            #absolute value since we specify higher and lower group
+            lfc_rep = list(this_lfc)
+            lfc_all_rep.extend(lfc_rep)
+    
+            #longform replicate name list, for matching up with DEGs
+            replist_long.extend('m'*len(DEG_names_rep))
+    
+            #longform comparison name list, for matcching up with DEGs
+            complist_long.extend([comp_name]*len(DEG_names_rep))
+    
+            #how many DEGs?
+            nDEGs.append(len(DEG_names_rep))
+    
+            #how many genes were over minimum expression threshold?
+            ngenes.append(len(list(FC.index))) 
+    
+            #collect the comparison name
+            comps.append(comp_name)
+    
+            #collect the replicate name
+            replist.append("merged")
+
+            #how many reps is this gene in
+            for gene in DEG_names_rep:
+                higher_group = FC[FC['gene']==gene]['higher_group']
+                higher_group = higher_group.iloc[0]
+                high = adata_temp[adata_temp.obs[metacell_axis]== higher_group]
+                high_total = len(unique(high.obs[replicate_key]))
+                high_reps = unique(high.obs[replicate_key])
+                high_33 = 0
+                for i in high_reps:
+                    high_rep = high[high.obs[replicate_key] == i]
+                    fraction = len(high_rep[high_rep[:,gene].X.todense() > 0].obs.index)/len(high_rep.obs.index)
+                    if fraction > 0.33:
+                        high_33 += 1
+                high_fraction = high_33/high_total
+                high_fraction_list.append(high_fraction)
+
+                lower_group = FC[FC['gene']==gene]['lower_group']
+                lower_group = lower_group.iloc[0]
+                low = adata_temp[adata_temp.obs[metacell_axis]== lower_group]
+                low_total = len(unique(low.obs[replicate_key]))
+                low_reps = unique(low.obs[replicate_key])
+                low_33 = 0
+                for i in low_reps:
+                    low_rep = low[low.obs[replicate_key]==i]
+                    fraction = len(low_rep[low_rep[:,gene].X.todense() > 0].obs.index)/len(low_rep.obs.index)
+                    if fraction > min_fraction:
+                        low_33 += 1
+                low_fraction = low_33/low_total
+                low_fraction_list.append(low_fraction)
+    
+            #zip up the outputs and create a dataframe
+            rep_condensed_output = list(zip(replist,comps,ngenes,nDEGs))
+            rep_long_output = list(zip(replist_long,complist_long,higher_all_rep,lower_all_rep,DEGs_all_rep,lfc_all_rep, 
+                                       high_fraction_list,low_fraction_list))
+    
+            #convert to dataframe format
+            condensed_DEG_df_rep = pd.DataFrame(rep_condensed_output,
+                                        columns=['replicate','comparison','ngenes','nDEGs'])
+            long_DEG_df_rep = pd.DataFrame(rep_long_output,
+                                        columns=['replicate','comparison','higher_group','lower_group','DEG_name', 'logFC', 'higher_group_reps', 'lower_group_reps'])       
+    
+
+        condensed_DEG_df = condensed_DEG_df_rep
+        long_DEG_df = long_DEG_df_rep
+
+            
+        return condensed_DEG_df,long_DEG_df

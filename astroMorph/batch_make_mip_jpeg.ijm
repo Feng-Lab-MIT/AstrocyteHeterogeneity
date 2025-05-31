@@ -1,5 +1,5 @@
 // ************* FIJI SCRIPT FOR MAKING MIP JPEGS FOR ASTRO EXR IMAGES ************* \\
-// Last modified by MES on 8/8/24
+// Last modified by MES on 3/22/25
 // Please read through this script and take note of anything marged "CHANGE HERE". Change accordingly
 // Lots of this script is hard-coded and will need to be modified based on your file saving/naming conventions
 // Some familiarity with Fiji / ijm is best
@@ -8,8 +8,8 @@
 run("Close All");
 setBatchMode(true);
 
-parent = "A:/Margaret/Astrocytes/Exp177_Aldh1l1-Cre_CAG-FLEX-GFP_4x-exp_astro_morph/thalamus/40x/"; //parent folder where raw microscope images are stored (e.g. in .nd2 format)
-parentout = "A:/Margaret/Astrocytes/Exp177_Aldh1l1-Cre_CAG-FLEX-GFP_4x-exp_astro_morph/thalamus/MIP_jpeg/"; //where to save the images
+parent = "A:/Margaret/Astrocytes/Exp189_4xexp_astromorph_202502/40x/"; //parent folder where raw microscope images are stored (e.g. in .nd2 format)
+parentout = "A:/Margaret/Astrocytes/Exp189_4xexp_astromorph_202502/lectin_mip/"; //where to save the images
 
 setBatchMode(true); //true for speed
 
@@ -45,20 +45,12 @@ function preprocessImage(imageFile,folder)
 	
 	newname = title;
 	print(newname); //output file 
+	run("Split Channels");
+	close();
 	run("Subtract Background...", "rolling=50 stack");
 	run("Z Project...", "projection=[Max Intensity]");
-	Stack.setDisplayMode("color");
-	Stack.setChannel(1);
-	run("Cyan");
 	run("Enhance Contrast", "saturated=0.35");
-	Stack.setChannel(2);
-	run("Magenta");
-	run("Enhance Contrast", "saturated=0.35");
-	Stack.setChannel(3);
-	run("Yellow");
-	run("Enhance Contrast", "saturated=0.35");
-	Stack.setDisplayMode("composite");
-	saveAs("Jpeg", parentout + newname + "_pp_MIP.jpb");
+	saveAs("Jpeg", parentout + newname + "_lectin_MIP.jpg");
 	close();
 	close();
 	run("Collect Garbage");

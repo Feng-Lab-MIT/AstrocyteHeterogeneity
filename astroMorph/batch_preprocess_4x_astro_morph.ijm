@@ -8,8 +8,8 @@
 run("Close All");
 setBatchMode(true);
 
-parent = "A:/Margaret/Astrocytes/Exp177_Aldh1l1-Cre_CAG-FLEX-GFP_4x-exp_astro_morph/striatum/40x/"; //parent folder where raw microscope images are stored (e.g. in .nd2 format)
-parentout = "A:/Margaret/Astrocytes/Exp177_Aldh1l1-Cre_CAG-FLEX-GFP_4x-exp_astro_morph/striatum/preprocessed/"; //where to save the images
+parent = "A:/Margaret/Astrocytes/Exp189_4xexp_astromorph_202502/40x/"; //parent folder where raw microscope images are stored (e.g. in .nd2 format)
+parentout = "A:/Margaret/Astrocytes/Exp189_4xexp_astromorph_202502/preprocessed/"; //where to save the images
 //reg = "ctx"; //specify the brain region here (you can delete this from the final filename in the last section if you want)
 
 	
@@ -51,13 +51,14 @@ function preprocessImage(imageFile,folder)
 	//we only want to process the first channel (GFP)
 	run("Split Channels");
 	
+	//close the other two channels
+	close();
+	close();
+	
 	//subtract the background
 	run("Subtract Background...", "rolling=50 stack");
 	saveAs("Tiff", parentout + newname + "_GFP_pp.tif");
 	close();
 	
-	//close the other two channels
-	close();
-	close();
 	run("Collect Garbage");
 }
